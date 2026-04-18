@@ -81,7 +81,7 @@ public final class Tag {
     public static final int OP_GET      = 0x0000000A;
     public static final int OP_ACTIVATE = 0x00000012;
     public static final int OP_DESTROY  = 0x00000014;
-    public static final int OP_CHECK    = 0x0000001C;
+    public static final int OP_CHECK    = 0x00000009;
 
     // --- Object Types ---
 

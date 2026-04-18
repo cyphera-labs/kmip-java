@@ -1,1 +1,3 @@
+io/cyphera/kmip/OperationsTest.class
 io/cyphera/kmip/TtlvTest.class
+io/cyphera/kmip/TagTest.class

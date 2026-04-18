@@ -110,8 +110,8 @@ class TagTest {
     }
 
     @Test
-    void operationCheckIs0x1C() {
-        assertEquals(0x1C, Tag.OP_CHECK);
+    void operationCheckIs0x09() {
+        assertEquals(0x09, Tag.OP_CHECK);
     }
 
     @Test
