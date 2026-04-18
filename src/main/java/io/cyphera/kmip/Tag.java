@@ -85,10 +85,12 @@ public final class Tag {
 
     // --- Object Types ---
 
-    public static final int OBJ_SYMMETRIC_KEY = 0x00000001;
-    public static final int OBJ_PUBLIC_KEY    = 0x00000002;
-    public static final int OBJ_PRIVATE_KEY   = 0x00000003;
-    public static final int OBJ_CERTIFICATE   = 0x00000006;
+    public static final int OBJ_CERTIFICATE   = 0x00000001;
+    public static final int OBJ_SYMMETRIC_KEY = 0x00000002;
+    public static final int OBJ_PUBLIC_KEY    = 0x00000003;
+    public static final int OBJ_PRIVATE_KEY   = 0x00000004;
+    public static final int OBJ_SPLIT_KEY     = 0x00000005;
+    public static final int OBJ_TEMPLATE      = 0x00000006;
     public static final int OBJ_SECRET_DATA   = 0x00000007;
     public static final int OBJ_OPAQUE_DATA   = 0x00000008;
 
