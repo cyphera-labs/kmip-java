@@ -1,0 +1,11 @@
+io/cyphera/kmip/KmipException.class
+io/cyphera/kmip/Tag.class
+io/cyphera/kmip/Ttlv$Item.class
+io/cyphera/kmip/KmipClient.class
+io/cyphera/kmip/Operations$LocateResult.class
+io/cyphera/kmip/Operations.class
+io/cyphera/kmip/Operations$Response.class
+io/cyphera/kmip/KmipClient$Builder.class
+io/cyphera/kmip/Operations$GetResult.class
+io/cyphera/kmip/Operations$CreateResult.class
+io/cyphera/kmip/Ttlv.class
