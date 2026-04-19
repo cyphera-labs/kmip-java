@@ -120,6 +120,247 @@ public class KmipClient implements AutoCloseable {
     }
 
     /**
+     * Activate a key by unique ID.
+     */
+    public void activate(String uniqueId) throws IOException {
+        byte[] request = Operations.buildActivateRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Destroy a key by unique ID.
+     */
+    public void destroy(String uniqueId) throws IOException {
+        byte[] request = Operations.buildDestroyRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Check the status of a managed object.
+     */
+    public Operations.CheckResult check(String uniqueId) throws IOException {
+        byte[] request = Operations.buildCheckRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseCheckPayload(response.payload);
+    }
+
+    /**
+     * Create a new asymmetric key pair on the server.
+     */
+    public Operations.CreateKeyPairResult createKeyPair(String name, int algorithm, int length) throws IOException {
+        byte[] request = Operations.buildCreateKeyPairRequest(name, algorithm, length);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseCreateKeyPairPayload(response.payload);
+    }
+
+    /**
+     * Register existing key material on the server.
+     */
+    public Operations.CreateResult register(int objectType, byte[] material, String name, int algorithm, int length) throws IOException {
+        byte[] request = Operations.buildRegisterRequest(objectType, material, name, algorithm, length);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseCreatePayload(response.payload);
+    }
+
+    /**
+     * Re-key an existing key on the server.
+     */
+    public Operations.ReKeyResult reKey(String uniqueId) throws IOException {
+        byte[] request = Operations.buildReKeyRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseReKeyPayload(response.payload);
+    }
+
+    /**
+     * Derive a new key from an existing key.
+     */
+    public Operations.DeriveKeyResult deriveKey(String uniqueId, byte[] derivationData, String name, int length) throws IOException {
+        byte[] request = Operations.buildDeriveKeyRequest(uniqueId, derivationData, name, length);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseDeriveKeyPayload(response.payload);
+    }
+
+    /**
+     * Fetch all attributes of a managed object.
+     */
+    public Operations.GetResult getAttributes(String uniqueId) throws IOException {
+        byte[] request = Operations.buildGetAttributesRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseGetPayload(response.payload);
+    }
+
+    /**
+     * Fetch the list of attribute names for a managed object.
+     */
+    public List<String> getAttributeList(String uniqueId) throws IOException {
+        byte[] request = Operations.buildGetAttributeListRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        if (response.payload == null) {
+            return new ArrayList<>();
+        }
+        List<Ttlv.Item> attrs = Ttlv.findChildren(response.payload, Tag.ATTRIBUTE_NAME);
+        List<String> names = new ArrayList<>();
+        for (Ttlv.Item attr : attrs) {
+            names.add(attr.stringValue());
+        }
+        return names;
+    }
+
+    /**
+     * Add an attribute to a managed object.
+     */
+    public void addAttribute(String uniqueId, String name, String value) throws IOException {
+        byte[] request = Operations.buildAddAttributeRequest(uniqueId, name, value);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Modify an attribute of a managed object.
+     */
+    public void modifyAttribute(String uniqueId, String name, String value) throws IOException {
+        byte[] request = Operations.buildModifyAttributeRequest(uniqueId, name, value);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Delete an attribute from a managed object.
+     */
+    public void deleteAttribute(String uniqueId, String name) throws IOException {
+        byte[] request = Operations.buildDeleteAttributeRequest(uniqueId, name);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Obtain a lease for a managed object. Returns lease time in seconds.
+     */
+    public int obtainLease(String uniqueId) throws IOException {
+        byte[] request = Operations.buildObtainLeaseRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        if (response.payload == null) return 0;
+        Ttlv.Item lease = Ttlv.findChild(response.payload, Tag.LEASE_TIME);
+        return lease != null ? lease.intValue() : 0;
+    }
+
+    /**
+     * Revoke a managed object with the given reason code.
+     */
+    public void revoke(String uniqueId, int reason) throws IOException {
+        byte[] request = Operations.buildRevokeRequest(uniqueId, reason);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Archive a managed object.
+     */
+    public void archive(String uniqueId) throws IOException {
+        byte[] request = Operations.buildArchiveRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Recover an archived managed object.
+     */
+    public void recover(String uniqueId) throws IOException {
+        byte[] request = Operations.buildRecoverRequest(uniqueId);
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Query the server for supported operations and object types.
+     */
+    public Operations.QueryResult query() throws IOException {
+        byte[] request = Operations.buildQueryRequest();
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseQueryPayload(response.payload);
+    }
+
+    /**
+     * Poll the server.
+     */
+    public void poll() throws IOException {
+        byte[] request = Operations.buildPollRequest();
+        byte[] responseData = send(request);
+        Operations.parseResponse(responseData);
+    }
+
+    /**
+     * Discover the KMIP versions supported by the server.
+     */
+    public Operations.DiscoverVersionsResult discoverVersions() throws IOException {
+        byte[] request = Operations.buildDiscoverVersionsRequest();
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseDiscoverVersionsPayload(response.payload);
+    }
+
+    /**
+     * Encrypt data using a managed key.
+     */
+    public Operations.EncryptResult encrypt(String uniqueId, byte[] data) throws IOException {
+        byte[] request = Operations.buildEncryptRequest(uniqueId, data);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseEncryptPayload(response.payload);
+    }
+
+    /**
+     * Decrypt data using a managed key.
+     */
+    public Operations.DecryptResult decrypt(String uniqueId, byte[] data, byte[] nonce) throws IOException {
+        byte[] request = Operations.buildDecryptRequest(uniqueId, data, nonce);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseDecryptPayload(response.payload);
+    }
+
+    /**
+     * Sign data using a managed key.
+     */
+    public Operations.SignResult sign(String uniqueId, byte[] data) throws IOException {
+        byte[] request = Operations.buildSignRequest(uniqueId, data);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseSignPayload(response.payload);
+    }
+
+    /**
+     * Verify a signature using a managed key.
+     */
+    public Operations.SignatureVerifyResult signatureVerify(String uniqueId, byte[] data, byte[] signature) throws IOException {
+        byte[] request = Operations.buildSignatureVerifyRequest(uniqueId, data, signature);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseSignatureVerifyPayload(response.payload);
+    }
+
+    /**
+     * Compute a MAC using a managed key.
+     */
+    public Operations.MACResult mac(String uniqueId, byte[] data) throws IOException {
+        byte[] request = Operations.buildMacRequest(uniqueId, data);
+        byte[] responseData = send(request);
+        Operations.Response response = Operations.parseResponse(responseData);
+        return Operations.parseMacPayload(response.payload);
+    }
+
+    /**
      * Convenience: locate by name + get material in one call.
      *
      * @param name key name

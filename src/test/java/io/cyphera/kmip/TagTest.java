@@ -115,13 +115,125 @@ class TagTest {
     }
 
     @Test
-    void operationValuesAreUnique() {
+    void operationCreateKeyPairIs0x02() {
+        assertEquals(0x02, Tag.OP_CREATE_KEY_PAIR);
+    }
+
+    @Test
+    void operationRegisterIs0x03() {
+        assertEquals(0x03, Tag.OP_REGISTER);
+    }
+
+    @Test
+    void operationReKeyIs0x04() {
+        assertEquals(0x04, Tag.OP_RE_KEY);
+    }
+
+    @Test
+    void operationDeriveKeyIs0x05() {
+        assertEquals(0x05, Tag.OP_DERIVE_KEY);
+    }
+
+    @Test
+    void operationGetAttributesIs0x0B() {
+        assertEquals(0x0B, Tag.OP_GET_ATTRIBUTES);
+    }
+
+    @Test
+    void operationGetAttributeListIs0x0C() {
+        assertEquals(0x0C, Tag.OP_GET_ATTRIBUTE_LIST);
+    }
+
+    @Test
+    void operationAddAttributeIs0x0D() {
+        assertEquals(0x0D, Tag.OP_ADD_ATTRIBUTE);
+    }
+
+    @Test
+    void operationModifyAttributeIs0x0E() {
+        assertEquals(0x0E, Tag.OP_MODIFY_ATTRIBUTE);
+    }
+
+    @Test
+    void operationDeleteAttributeIs0x0F() {
+        assertEquals(0x0F, Tag.OP_DELETE_ATTRIBUTE);
+    }
+
+    @Test
+    void operationObtainLeaseIs0x10() {
+        assertEquals(0x10, Tag.OP_OBTAIN_LEASE);
+    }
+
+    @Test
+    void operationRevokeIs0x13() {
+        assertEquals(0x13, Tag.OP_REVOKE);
+    }
+
+    @Test
+    void operationArchiveIs0x15() {
+        assertEquals(0x15, Tag.OP_ARCHIVE);
+    }
+
+    @Test
+    void operationRecoverIs0x16() {
+        assertEquals(0x16, Tag.OP_RECOVER);
+    }
+
+    @Test
+    void operationQueryIs0x18() {
+        assertEquals(0x18, Tag.OP_QUERY);
+    }
+
+    @Test
+    void operationPollIs0x1A() {
+        assertEquals(0x1A, Tag.OP_POLL);
+    }
+
+    @Test
+    void operationDiscoverVersionsIs0x1E() {
+        assertEquals(0x1E, Tag.OP_DISCOVER_VERSIONS);
+    }
+
+    @Test
+    void operationEncryptIs0x1F() {
+        assertEquals(0x1F, Tag.OP_ENCRYPT);
+    }
+
+    @Test
+    void operationDecryptIs0x20() {
+        assertEquals(0x20, Tag.OP_DECRYPT);
+    }
+
+    @Test
+    void operationSignIs0x21() {
+        assertEquals(0x21, Tag.OP_SIGN);
+    }
+
+    @Test
+    void operationSignatureVerifyIs0x22() {
+        assertEquals(0x22, Tag.OP_SIGNATURE_VERIFY);
+    }
+
+    @Test
+    void operationMacIs0x23() {
+        assertEquals(0x23, Tag.OP_MAC);
+    }
+
+    @Test
+    void all27OperationValuesAreUnique() {
         int[] values = {
-            Tag.OP_CREATE, Tag.OP_LOCATE, Tag.OP_GET,
-            Tag.OP_ACTIVATE, Tag.OP_DESTROY, Tag.OP_CHECK
+            Tag.OP_CREATE, Tag.OP_CREATE_KEY_PAIR, Tag.OP_REGISTER, Tag.OP_RE_KEY,
+            Tag.OP_DERIVE_KEY, Tag.OP_LOCATE, Tag.OP_CHECK, Tag.OP_GET,
+            Tag.OP_GET_ATTRIBUTES, Tag.OP_GET_ATTRIBUTE_LIST,
+            Tag.OP_ADD_ATTRIBUTE, Tag.OP_MODIFY_ATTRIBUTE, Tag.OP_DELETE_ATTRIBUTE,
+            Tag.OP_OBTAIN_LEASE, Tag.OP_ACTIVATE, Tag.OP_REVOKE, Tag.OP_DESTROY,
+            Tag.OP_ARCHIVE, Tag.OP_RECOVER, Tag.OP_QUERY, Tag.OP_POLL,
+            Tag.OP_DISCOVER_VERSIONS, Tag.OP_ENCRYPT, Tag.OP_DECRYPT,
+            Tag.OP_SIGN, Tag.OP_SIGNATURE_VERIFY, Tag.OP_MAC
         };
         Set<Integer> set = new HashSet<>();
         for (int v : values) set.add(v);
+        assertEquals(27, values.length, "Should have exactly 27 operations");
         assertEquals(values.length, set.size(), "Operation values must be unique");
     }
 
@@ -345,6 +457,73 @@ class TagTest {
 
     // ---- All tag values in 0x42XXXX range ----
 
+    // ---- New tag constants ----
+
+    @Test
+    void privateKeyUniqueIdentifierTag() {
+        assertEquals(0x420066, Tag.PRIVATE_KEY_UNIQUE_IDENTIFIER);
+    }
+
+    @Test
+    void publicKeyUniqueIdentifierTag() {
+        assertEquals(0x42006F, Tag.PUBLIC_KEY_UNIQUE_IDENTIFIER);
+    }
+
+    @Test
+    void dataTag() {
+        assertEquals(0x420033, Tag.DATA);
+    }
+
+    @Test
+    void ivCounterNonceTag() {
+        assertEquals(0x420047, Tag.IV_COUNTER_NONCE);
+    }
+
+    @Test
+    void signatureDataTag() {
+        assertEquals(0x42004F, Tag.SIGNATURE_DATA);
+    }
+
+    @Test
+    void macDataTag() {
+        assertEquals(0x420051, Tag.MAC_DATA);
+    }
+
+    @Test
+    void validityIndicatorTag() {
+        assertEquals(0x420098, Tag.VALIDITY_INDICATOR);
+    }
+
+    @Test
+    void revocationReasonTag() {
+        assertEquals(0x420082, Tag.REVOCATION_REASON);
+    }
+
+    @Test
+    void revocationReasonCodeTag() {
+        assertEquals(0x420083, Tag.REVOCATION_REASON_CODE);
+    }
+
+    @Test
+    void derivationParametersTag() {
+        assertEquals(0x420032, Tag.DERIVATION_PARAMETERS);
+    }
+
+    @Test
+    void derivationDataTag() {
+        assertEquals(0x420030, Tag.DERIVATION_DATA);
+    }
+
+    @Test
+    void leaseTimeTag() {
+        assertEquals(0x420049, Tag.LEASE_TIME);
+    }
+
+    @Test
+    void stateTag() {
+        assertEquals(0x42008D, Tag.STATE);
+    }
+
     @Test
     void allTagFieldsAreIn0x42Range() throws Exception {
         List<String> tagFieldNames = List.of(
@@ -356,7 +535,15 @@ class TagTest {
             "ATTRIBUTE", "ATTRIBUTE_NAME", "ATTRIBUTE_VALUE",
             "SYMMETRIC_KEY", "KEY_BLOCK", "KEY_FORMAT_TYPE", "KEY_VALUE", "KEY_MATERIAL",
             "CRYPTOGRAPHIC_ALGORITHM", "CRYPTOGRAPHIC_LENGTH", "CRYPTOGRAPHIC_USAGE_MASK",
-            "TEMPLATE_ATTRIBUTE"
+            "TEMPLATE_ATTRIBUTE",
+            "PRIVATE_KEY_UNIQUE_IDENTIFIER", "PUBLIC_KEY_UNIQUE_IDENTIFIER",
+            "PUBLIC_KEY", "PRIVATE_KEY",
+            "CERTIFICATE", "CERTIFICATE_TYPE", "CERTIFICATE_VALUE",
+            "DATA", "IV_COUNTER_NONCE", "SIGNATURE_DATA", "MAC_DATA", "VALIDITY_INDICATOR",
+            "REVOCATION_REASON", "REVOCATION_REASON_CODE",
+            "QUERY_FUNCTION", "STATE",
+            "DERIVATION_METHOD", "DERIVATION_PARAMETERS", "DERIVATION_DATA",
+            "LEASE_TIME"
         );
         for (String name : tagFieldNames) {
             Field f = Tag.class.getDeclaredField(name);

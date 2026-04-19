@@ -340,6 +340,619 @@ class OperationsTest {
         assertEquals("new-key-id", result.uniqueIdentifier);
     }
 
+    // ---- buildActivateRequest ----
+
+    @Test
+    void buildActivateRequestHasActivateOperation() {
+        byte[] request = Operations.buildActivateRequest("uid-1");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_ACTIVATE, operation.intValue());
+    }
+
+    @Test
+    void buildActivateRequestContainsUid() {
+        byte[] request = Operations.buildActivateRequest("uid-activate");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item uid = findChild(payload, Tag.UNIQUE_IDENTIFIER);
+        assertEquals("uid-activate", uid.stringValue());
+    }
+
+    // ---- buildDestroyRequest ----
+
+    @Test
+    void buildDestroyRequestHasDestroyOperation() {
+        byte[] request = Operations.buildDestroyRequest("uid-2");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_DESTROY, operation.intValue());
+    }
+
+    // ---- buildCheckRequest ----
+
+    @Test
+    void buildCheckRequestHasCheckOperation() {
+        byte[] request = Operations.buildCheckRequest("uid-3");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_CHECK, operation.intValue());
+    }
+
+    // ---- buildCreateKeyPairRequest ----
+
+    @Test
+    void buildCreateKeyPairRequestHasCorrectOperation() {
+        byte[] request = Operations.buildCreateKeyPairRequest("kp-1", Tag.ALG_RSA, 2048);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_CREATE_KEY_PAIR, operation.intValue());
+    }
+
+    @Test
+    void buildCreateKeyPairRequestHasSignVerifyUsage() {
+        byte[] request = Operations.buildCreateKeyPairRequest("kp-1", Tag.ALG_RSA, 2048);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item template = findChild(payload, Tag.TEMPLATE_ATTRIBUTE);
+        Ttlv.Item usageAttr = template.children().get(2);
+        Ttlv.Item usageValue = findChild(usageAttr, Tag.ATTRIBUTE_VALUE);
+        assertEquals(Tag.USAGE_SIGN | Tag.USAGE_VERIFY, usageValue.intValue());
+    }
+
+    // ---- buildRegisterRequest ----
+
+    @Test
+    void buildRegisterRequestHasRegisterOperation() {
+        byte[] material = {0x01, 0x02, 0x03, 0x04};
+        byte[] request = Operations.buildRegisterRequest(Tag.OBJ_SYMMETRIC_KEY, material, "reg-key", Tag.ALG_AES, 256);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_REGISTER, operation.intValue());
+    }
+
+    @Test
+    void buildRegisterRequestContainsKeyMaterial() {
+        byte[] material = {0x01, 0x02, 0x03, 0x04};
+        byte[] request = Operations.buildRegisterRequest(Tag.OBJ_SYMMETRIC_KEY, material, "reg-key", Tag.ALG_AES, 256);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item symKey = findChild(payload, Tag.SYMMETRIC_KEY);
+        assertNotNull(symKey);
+        Ttlv.Item keyBlock = findChild(symKey, Tag.KEY_BLOCK);
+        assertNotNull(keyBlock);
+        Ttlv.Item keyValue = findChild(keyBlock, Tag.KEY_VALUE);
+        assertNotNull(keyValue);
+        Ttlv.Item km = findChild(keyValue, Tag.KEY_MATERIAL);
+        assertArrayEquals(material, km.bytesValue());
+    }
+
+    @Test
+    void buildRegisterRequestWithoutNameOmitsTemplate() {
+        byte[] material = {0x01, 0x02};
+        byte[] request = Operations.buildRegisterRequest(Tag.OBJ_SYMMETRIC_KEY, material, "", Tag.ALG_AES, 128);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item template = findChild(payload, Tag.TEMPLATE_ATTRIBUTE);
+        assertNull(template);
+    }
+
+    // ---- buildReKeyRequest ----
+
+    @Test
+    void buildReKeyRequestHasReKeyOperation() {
+        byte[] request = Operations.buildReKeyRequest("uid-rk");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_RE_KEY, operation.intValue());
+    }
+
+    // ---- buildDeriveKeyRequest ----
+
+    @Test
+    void buildDeriveKeyRequestHasDeriveKeyOperation() {
+        byte[] request = Operations.buildDeriveKeyRequest("uid-dk", new byte[]{0x01}, "derived", 128);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_DERIVE_KEY, operation.intValue());
+    }
+
+    @Test
+    void buildDeriveKeyRequestContainsDerivationData() {
+        byte[] derivData = {0x0A, 0x0B};
+        byte[] request = Operations.buildDeriveKeyRequest("uid-dk", derivData, "derived", 256);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item derivParams = findChild(payload, Tag.DERIVATION_PARAMETERS);
+        assertNotNull(derivParams);
+        Ttlv.Item dd = findChild(derivParams, Tag.DERIVATION_DATA);
+        assertArrayEquals(derivData, dd.bytesValue());
+    }
+
+    // ---- buildGetAttributesRequest ----
+
+    @Test
+    void buildGetAttributesRequestHasCorrectOperation() {
+        byte[] request = Operations.buildGetAttributesRequest("uid-ga");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_GET_ATTRIBUTES, operation.intValue());
+    }
+
+    // ---- buildGetAttributeListRequest ----
+
+    @Test
+    void buildGetAttributeListRequestHasCorrectOperation() {
+        byte[] request = Operations.buildGetAttributeListRequest("uid-gal");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_GET_ATTRIBUTE_LIST, operation.intValue());
+    }
+
+    // ---- buildAddAttributeRequest ----
+
+    @Test
+    void buildAddAttributeRequestHasCorrectOperation() {
+        byte[] request = Operations.buildAddAttributeRequest("uid-aa", "Comment", "test");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_ADD_ATTRIBUTE, operation.intValue());
+    }
+
+    @Test
+    void buildAddAttributeRequestContainsAttribute() {
+        byte[] request = Operations.buildAddAttributeRequest("uid-aa", "Comment", "my-comment");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item attr = findChild(payload, Tag.ATTRIBUTE);
+        Ttlv.Item attrName = findChild(attr, Tag.ATTRIBUTE_NAME);
+        assertEquals("Comment", attrName.stringValue());
+        Ttlv.Item attrValue = findChild(attr, Tag.ATTRIBUTE_VALUE);
+        assertEquals("my-comment", attrValue.stringValue());
+    }
+
+    // ---- buildModifyAttributeRequest ----
+
+    @Test
+    void buildModifyAttributeRequestHasCorrectOperation() {
+        byte[] request = Operations.buildModifyAttributeRequest("uid-ma", "Comment", "updated");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_MODIFY_ATTRIBUTE, operation.intValue());
+    }
+
+    // ---- buildDeleteAttributeRequest ----
+
+    @Test
+    void buildDeleteAttributeRequestHasCorrectOperation() {
+        byte[] request = Operations.buildDeleteAttributeRequest("uid-da", "Comment");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_DELETE_ATTRIBUTE, operation.intValue());
+    }
+
+    @Test
+    void buildDeleteAttributeRequestContainsAttrName() {
+        byte[] request = Operations.buildDeleteAttributeRequest("uid-da", "Comment");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item attr = findChild(payload, Tag.ATTRIBUTE);
+        Ttlv.Item attrName = findChild(attr, Tag.ATTRIBUTE_NAME);
+        assertEquals("Comment", attrName.stringValue());
+    }
+
+    // ---- buildObtainLeaseRequest ----
+
+    @Test
+    void buildObtainLeaseRequestHasCorrectOperation() {
+        byte[] request = Operations.buildObtainLeaseRequest("uid-ol");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_OBTAIN_LEASE, operation.intValue());
+    }
+
+    // ---- buildRevokeRequest ----
+
+    @Test
+    void buildRevokeRequestHasRevokeOperation() {
+        byte[] request = Operations.buildRevokeRequest("uid-rev", 1);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_REVOKE, operation.intValue());
+    }
+
+    @Test
+    void buildRevokeRequestContainsRevocationReason() {
+        byte[] request = Operations.buildRevokeRequest("uid-rev", 5);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item revReason = findChild(payload, Tag.REVOCATION_REASON);
+        assertNotNull(revReason);
+        Ttlv.Item reasonCode = findChild(revReason, Tag.REVOCATION_REASON_CODE);
+        assertEquals(5, reasonCode.intValue());
+    }
+
+    // ---- buildArchiveRequest ----
+
+    @Test
+    void buildArchiveRequestHasArchiveOperation() {
+        byte[] request = Operations.buildArchiveRequest("uid-arc");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_ARCHIVE, operation.intValue());
+    }
+
+    // ---- buildRecoverRequest ----
+
+    @Test
+    void buildRecoverRequestHasRecoverOperation() {
+        byte[] request = Operations.buildRecoverRequest("uid-rec");
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_RECOVER, operation.intValue());
+    }
+
+    // ---- buildQueryRequest ----
+
+    @Test
+    void buildQueryRequestHasQueryOperation() {
+        byte[] request = Operations.buildQueryRequest();
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_QUERY, operation.intValue());
+    }
+
+    @Test
+    void buildQueryRequestHasEmptyPayload() {
+        byte[] request = Operations.buildQueryRequest();
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        assertNotNull(payload);
+        assertEquals(0, payload.children().size());
+    }
+
+    // ---- buildPollRequest ----
+
+    @Test
+    void buildPollRequestHasPollOperation() {
+        byte[] request = Operations.buildPollRequest();
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_POLL, operation.intValue());
+    }
+
+    // ---- buildDiscoverVersionsRequest ----
+
+    @Test
+    void buildDiscoverVersionsRequestHasCorrectOperation() {
+        byte[] request = Operations.buildDiscoverVersionsRequest();
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_DISCOVER_VERSIONS, operation.intValue());
+    }
+
+    // ---- buildEncryptRequest ----
+
+    @Test
+    void buildEncryptRequestHasEncryptOperation() {
+        byte[] request = Operations.buildEncryptRequest("uid-enc", new byte[]{0x01, 0x02});
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_ENCRYPT, operation.intValue());
+    }
+
+    @Test
+    void buildEncryptRequestContainsData() {
+        byte[] data = {0x0A, 0x0B, 0x0C};
+        byte[] request = Operations.buildEncryptRequest("uid-enc", data);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item dataItem = findChild(payload, Tag.DATA);
+        assertArrayEquals(data, dataItem.bytesValue());
+    }
+
+    // ---- buildDecryptRequest ----
+
+    @Test
+    void buildDecryptRequestHasDecryptOperation() {
+        byte[] request = Operations.buildDecryptRequest("uid-dec", new byte[]{0x01}, null);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_DECRYPT, operation.intValue());
+    }
+
+    @Test
+    void buildDecryptRequestWithNonceIncludesIV() {
+        byte[] nonce = {0x01, 0x02, 0x03};
+        byte[] request = Operations.buildDecryptRequest("uid-dec", new byte[]{0x0A}, nonce);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item iv = findChild(payload, Tag.IV_COUNTER_NONCE);
+        assertNotNull(iv);
+        assertArrayEquals(nonce, iv.bytesValue());
+    }
+
+    @Test
+    void buildDecryptRequestWithoutNonceOmitsIV() {
+        byte[] request = Operations.buildDecryptRequest("uid-dec", new byte[]{0x0A}, null);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item iv = findChild(payload, Tag.IV_COUNTER_NONCE);
+        assertNull(iv);
+    }
+
+    // ---- buildSignRequest ----
+
+    @Test
+    void buildSignRequestHasSignOperation() {
+        byte[] request = Operations.buildSignRequest("uid-sign", new byte[]{0x01});
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_SIGN, operation.intValue());
+    }
+
+    // ---- buildSignatureVerifyRequest ----
+
+    @Test
+    void buildSignatureVerifyRequestHasCorrectOperation() {
+        byte[] request = Operations.buildSignatureVerifyRequest("uid-sv", new byte[]{0x01}, new byte[]{0x02});
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_SIGNATURE_VERIFY, operation.intValue());
+    }
+
+    @Test
+    void buildSignatureVerifyRequestContainsSignatureData() {
+        byte[] sig = {0x0A, 0x0B};
+        byte[] request = Operations.buildSignatureVerifyRequest("uid-sv", new byte[]{0x01}, sig);
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item sigData = findChild(payload, Tag.SIGNATURE_DATA);
+        assertArrayEquals(sig, sigData.bytesValue());
+    }
+
+    // ---- buildMacRequest ----
+
+    @Test
+    void buildMacRequestHasMacOperation() {
+        byte[] request = Operations.buildMacRequest("uid-mac", new byte[]{0x01});
+        Ttlv.Item decoded = decodeTTLV(request);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item operation = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_MAC, operation.intValue());
+    }
+
+    // ---- parseCheckPayload ----
+
+    @Test
+    void parseCheckPayloadExtractsUid() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeTextString(Tag.UNIQUE_IDENTIFIER, "check-id")
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.CheckResult result = Operations.parseCheckPayload(decoded);
+        assertEquals("check-id", result.uniqueIdentifier);
+    }
+
+    @Test
+    void parseCheckPayloadHandlesNull() {
+        Operations.CheckResult result = Operations.parseCheckPayload(null);
+        assertNull(result.uniqueIdentifier);
+    }
+
+    // ---- parseReKeyPayload ----
+
+    @Test
+    void parseReKeyPayloadExtractsUid() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeTextString(Tag.UNIQUE_IDENTIFIER, "rekey-id")
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.ReKeyResult result = Operations.parseReKeyPayload(decoded);
+        assertEquals("rekey-id", result.uniqueIdentifier);
+    }
+
+    // ---- parseEncryptPayload ----
+
+    @Test
+    void parseEncryptPayloadExtractsDataAndNonce() {
+        byte[] encData = {0x0A, 0x0B, 0x0C};
+        byte[] encNonce = {0x01, 0x02};
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeByteString(Tag.DATA, encData),
+            encodeByteString(Tag.IV_COUNTER_NONCE, encNonce)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.EncryptResult result = Operations.parseEncryptPayload(decoded);
+        assertArrayEquals(encData, result.data);
+        assertArrayEquals(encNonce, result.nonce);
+    }
+
+    @Test
+    void parseEncryptPayloadHandlesNull() {
+        Operations.EncryptResult result = Operations.parseEncryptPayload(null);
+        assertNull(result.data);
+        assertNull(result.nonce);
+    }
+
+    // ---- parseDecryptPayload ----
+
+    @Test
+    void parseDecryptPayloadExtractsData() {
+        byte[] plaintext = {0x01, 0x02, 0x03};
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeByteString(Tag.DATA, plaintext)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.DecryptResult result = Operations.parseDecryptPayload(decoded);
+        assertArrayEquals(plaintext, result.data);
+    }
+
+    // ---- parseSignPayload ----
+
+    @Test
+    void parseSignPayloadExtractsSignatureData() {
+        byte[] sig = {0x0A, 0x0B, 0x0C, 0x0D};
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeByteString(Tag.SIGNATURE_DATA, sig)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.SignResult result = Operations.parseSignPayload(decoded);
+        assertArrayEquals(sig, result.signatureData);
+    }
+
+    // ---- parseSignatureVerifyPayload ----
+
+    @Test
+    void parseSignatureVerifyPayloadValidWhenIndicatorZero() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeEnum(Tag.VALIDITY_INDICATOR, 0)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.SignatureVerifyResult result = Operations.parseSignatureVerifyPayload(decoded);
+        assertTrue(result.valid);
+    }
+
+    @Test
+    void parseSignatureVerifyPayloadInvalidWhenIndicatorNonZero() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeEnum(Tag.VALIDITY_INDICATOR, 1)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.SignatureVerifyResult result = Operations.parseSignatureVerifyPayload(decoded);
+        assertFalse(result.valid);
+    }
+
+    // ---- parseMacPayload ----
+
+    @Test
+    void parseMacPayloadExtractsMacData() {
+        byte[] macBytes = {0x01, 0x02, 0x03};
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeByteString(Tag.MAC_DATA, macBytes)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.MACResult result = Operations.parseMacPayload(decoded);
+        assertArrayEquals(macBytes, result.macData);
+    }
+
+    // ---- parseQueryPayload ----
+
+    @Test
+    void parseQueryPayloadExtractsOperationsAndObjectTypes() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeEnum(Tag.OPERATION, Tag.OP_CREATE),
+            encodeEnum(Tag.OPERATION, Tag.OP_GET),
+            encodeEnum(Tag.OBJECT_TYPE, Tag.OBJ_SYMMETRIC_KEY)
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.QueryResult result = Operations.parseQueryPayload(decoded);
+        assertEquals(2, result.operations.size());
+        assertEquals(Tag.OP_CREATE, result.operations.get(0).intValue());
+        assertEquals(Tag.OP_GET, result.operations.get(1).intValue());
+        assertEquals(1, result.objectTypes.size());
+        assertEquals(Tag.OBJ_SYMMETRIC_KEY, result.objectTypes.get(0).intValue());
+    }
+
+    @Test
+    void parseQueryPayloadHandlesNull() {
+        Operations.QueryResult result = Operations.parseQueryPayload(null);
+        assertTrue(result.operations.isEmpty());
+        assertTrue(result.objectTypes.isEmpty());
+    }
+
+    // ---- parseDiscoverVersionsPayload ----
+
+    @Test
+    void parseDiscoverVersionsPayloadExtractsVersions() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeStructure(Tag.PROTOCOL_VERSION,
+                encodeInteger(Tag.PROTOCOL_VERSION_MAJOR, 1),
+                encodeInteger(Tag.PROTOCOL_VERSION_MINOR, 4)
+            ),
+            encodeStructure(Tag.PROTOCOL_VERSION,
+                encodeInteger(Tag.PROTOCOL_VERSION_MAJOR, 1),
+                encodeInteger(Tag.PROTOCOL_VERSION_MINOR, 2)
+            )
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.DiscoverVersionsResult result = Operations.parseDiscoverVersionsPayload(decoded);
+        assertEquals(2, result.versions.size());
+        assertEquals(1, result.versions.get(0)[0]);
+        assertEquals(4, result.versions.get(0)[1]);
+        assertEquals(1, result.versions.get(1)[0]);
+        assertEquals(2, result.versions.get(1)[1]);
+    }
+
+    // ---- parseDeriveKeyPayload ----
+
+    @Test
+    void parseDeriveKeyPayloadExtractsUid() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeTextString(Tag.UNIQUE_IDENTIFIER, "derived-id")
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.DeriveKeyResult result = Operations.parseDeriveKeyPayload(decoded);
+        assertEquals("derived-id", result.uniqueIdentifier);
+    }
+
+    // ---- parseCreateKeyPairPayload ----
+
+    @Test
+    void parseCreateKeyPairPayloadExtractsBothUids() {
+        byte[] payload = encodeStructure(Tag.RESPONSE_PAYLOAD,
+            encodeTextString(Tag.PRIVATE_KEY_UNIQUE_IDENTIFIER, "priv-id"),
+            encodeTextString(Tag.PUBLIC_KEY_UNIQUE_IDENTIFIER, "pub-id")
+        );
+        Ttlv.Item decoded = decodeTTLV(payload);
+        Operations.CreateKeyPairResult result = Operations.parseCreateKeyPairPayload(decoded);
+        assertEquals("priv-id", result.privateKeyUid);
+        assertEquals("pub-id", result.publicKeyUid);
+    }
+
+    @Test
+    void parseCreateKeyPairPayloadHandlesNull() {
+        Operations.CreateKeyPairResult result = Operations.parseCreateKeyPairPayload(null);
+        assertNull(result.privateKeyUid);
+        assertNull(result.publicKeyUid);
+    }
+
     // ---- Round-trip: build -> encode -> decode -> verify ----
 
     @Test
@@ -347,7 +960,6 @@ class OperationsTest {
         byte[] encoded = Operations.buildLocateRequest("round-trip-key");
         Ttlv.Item decoded = decodeTTLV(encoded);
         assertEquals(Tag.REQUEST_MESSAGE, decoded.tag);
-        // Re-encode and verify identical
         Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
         assertNotNull(batchItem);
         Ttlv.Item op = findChild(batchItem, Tag.OPERATION);
@@ -374,6 +986,31 @@ class OperationsTest {
         assertEquals(Tag.OBJ_SYMMETRIC_KEY, objType.intValue());
         Ttlv.Item template = findChild(payload, Tag.TEMPLATE_ATTRIBUTE);
         assertEquals(4, template.children().size());
+    }
+
+    @Test
+    void roundTripEncryptRequest() {
+        byte[] data = {0x01, 0x02, 0x03, 0x04};
+        byte[] encoded = Operations.buildEncryptRequest("rt-enc", data);
+        Ttlv.Item decoded = decodeTTLV(encoded);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item uid = findChild(payload, Tag.UNIQUE_IDENTIFIER);
+        assertEquals("rt-enc", uid.stringValue());
+        Ttlv.Item dataItem = findChild(payload, Tag.DATA);
+        assertArrayEquals(data, dataItem.bytesValue());
+    }
+
+    @Test
+    void roundTripRevokeRequest() {
+        byte[] encoded = Operations.buildRevokeRequest("rt-rev", 3);
+        Ttlv.Item decoded = decodeTTLV(encoded);
+        Ttlv.Item batchItem = findChild(decoded, Tag.BATCH_ITEM);
+        Ttlv.Item op = findChild(batchItem, Tag.OPERATION);
+        assertEquals(Tag.OP_REVOKE, op.intValue());
+        Ttlv.Item payload = findChild(batchItem, Tag.REQUEST_PAYLOAD);
+        Ttlv.Item uid = findChild(payload, Tag.UNIQUE_IDENTIFIER);
+        assertEquals("rt-rev", uid.stringValue());
     }
 
     // ---- Helper to build mock KMIP response ----

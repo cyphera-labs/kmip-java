@@ -74,14 +74,71 @@ public final class Tag {
     // Template
     public static final int TEMPLATE_ATTRIBUTE     = 0x420091;
 
-    // --- Operations ---
+    // Key pair
+    public static final int PRIVATE_KEY_UNIQUE_IDENTIFIER = 0x420066;
+    public static final int PUBLIC_KEY_UNIQUE_IDENTIFIER  = 0x42006F;
+    public static final int PUBLIC_KEY                    = 0x42004E;
+    public static final int PRIVATE_KEY                   = 0x42004D;
 
-    public static final int OP_CREATE   = 0x00000001;
-    public static final int OP_LOCATE   = 0x00000008;
-    public static final int OP_GET      = 0x0000000A;
-    public static final int OP_ACTIVATE = 0x00000012;
-    public static final int OP_DESTROY  = 0x00000014;
-    public static final int OP_CHECK    = 0x00000009;
+    // Certificate
+    public static final int CERTIFICATE       = 0x420021;
+    public static final int CERTIFICATE_TYPE  = 0x42001D;
+    public static final int CERTIFICATE_VALUE = 0x42001E;
+
+    // Crypto operations
+    public static final int DATA               = 0x420033;
+    public static final int IV_COUNTER_NONCE   = 0x420047;
+    public static final int SIGNATURE_DATA     = 0x42004F;
+    public static final int MAC_DATA           = 0x420051;
+    public static final int VALIDITY_INDICATOR = 0x420098;
+
+    // Revocation
+    public static final int REVOCATION_REASON      = 0x420082;
+    public static final int REVOCATION_REASON_CODE = 0x420083;
+
+    // Query
+    public static final int QUERY_FUNCTION = 0x420074;
+
+    // State
+    public static final int STATE = 0x42008D;
+
+    // Derivation
+    public static final int DERIVATION_METHOD     = 0x420031;
+    public static final int DERIVATION_PARAMETERS = 0x420032;
+    public static final int DERIVATION_DATA       = 0x420030;
+
+    // Lease
+    public static final int LEASE_TIME = 0x420049;
+
+    // --- Operations (KMIP 1.4) ---
+
+    public static final int OP_CREATE             = 0x00000001;
+    public static final int OP_CREATE_KEY_PAIR    = 0x00000002;
+    public static final int OP_REGISTER           = 0x00000003;
+    public static final int OP_RE_KEY             = 0x00000004;
+    public static final int OP_DERIVE_KEY         = 0x00000005;
+    public static final int OP_LOCATE             = 0x00000008;
+    public static final int OP_CHECK              = 0x00000009;
+    public static final int OP_GET                = 0x0000000A;
+    public static final int OP_GET_ATTRIBUTES     = 0x0000000B;
+    public static final int OP_GET_ATTRIBUTE_LIST = 0x0000000C;
+    public static final int OP_ADD_ATTRIBUTE      = 0x0000000D;
+    public static final int OP_MODIFY_ATTRIBUTE   = 0x0000000E;
+    public static final int OP_DELETE_ATTRIBUTE   = 0x0000000F;
+    public static final int OP_OBTAIN_LEASE       = 0x00000010;
+    public static final int OP_ACTIVATE           = 0x00000012;
+    public static final int OP_REVOKE             = 0x00000013;
+    public static final int OP_DESTROY            = 0x00000014;
+    public static final int OP_ARCHIVE            = 0x00000015;
+    public static final int OP_RECOVER            = 0x00000016;
+    public static final int OP_QUERY              = 0x00000018;
+    public static final int OP_POLL               = 0x0000001A;
+    public static final int OP_DISCOVER_VERSIONS  = 0x0000001E;
+    public static final int OP_ENCRYPT            = 0x0000001F;
+    public static final int OP_DECRYPT            = 0x00000020;
+    public static final int OP_SIGN               = 0x00000021;
+    public static final int OP_SIGNATURE_VERIFY   = 0x00000022;
+    public static final int OP_MAC                = 0x00000023;
 
     // --- Object Types ---
 

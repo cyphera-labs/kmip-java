@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="io.cyphera.kmip.TtlvTest" time="0.04" tests="47" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="io.cyphera.kmip.TtlvTest" time="0.041" tests="47" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -12,7 +12,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/opt/homebrew/Cellar/openjdk/25.0.2/libexec/openjdk.jdk/Contents/Home/lib"/>
-    <property name="sun.java.command" value="/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire/surefirebooter-20260418005335010_3.jar /Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire 2026-04-18T00-53-34_970-jvmRun1 surefire-20260418005335010_1tmp surefire_0-20260418005335010_2tmp"/>
+    <property name="sun.java.command" value="/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire/surefirebooter-20260418211641994_3.jar /Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire 2026-04-18T21-16-41_950-jvmRun1 surefire-20260418211641994_1tmp surefire_0-20260418211641994_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/test-classes:/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/classes:/Users/lgutschow/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar:/Users/lgutschow/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar:/Users/lgutschow/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/Users/lgutschow/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar:/Users/lgutschow/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/Users/lgutschow/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar:/Users/lgutschow/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar:/Users/lgutschow/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -28,7 +28,7 @@
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire/surefirebooter-20260418005335010_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/lgutschow/workspace/_github/cyphera-labs/kmip-java/target/surefire/surefirebooter-20260418211641994_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="25.0.2"/>
     <property name="user.name" value="lgutschow"/>
@@ -56,14 +56,14 @@
     <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
     <property name="java.class.version" value="69.0"/>
   </properties>
-  <testcase name="findChildReturnsNullWhenNotFound" classname="io.cyphera.kmip.TtlvTest" time="0.01"/>
+  <testcase name="findChildReturnsNullWhenNotFound" classname="io.cyphera.kmip.TtlvTest" time="0.011"/>
   <testcase name="encodesAndDecodesBooleanFalse" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="encodesAndDecodesZeroInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesTextString" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="tagBytesAreBigEndian" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="encodesAndDecodesEnumeration" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesInterval" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="lengthFieldForTextString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="lengthFieldForTextString" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="encodesAndDecodesPositiveInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="typeByteValues" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesLongTextString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
@@ -71,36 +71,36 @@
   <testcase name="encodesAndDecodesBooleanTrue" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesMaxInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="handlesEmptyTextString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="paddingBytesAreZeroForInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="lengthFieldIsCorrect" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
-  <testcase name="findChildrenReturnsEmptyOnNonStructure" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="paddingBytesAreZeroForInteger" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="lengthFieldIsCorrect" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="findChildrenReturnsEmptyOnNonStructure" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="findChildLocatesChildByTag" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="textStringNineBytesRoundsToSixteen" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesDateTime" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="encodesAndDecodesDateTime" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="textStringPaddingBytesAreZero" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="childrenReturnsEmptyListOnNonStructure" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="byteStringPaddedToAlignment" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="integerTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="textStringEightBytesNoPaddingNeeded" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
-  <testcase name="throwsOnBufferTooShort" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="throwsOnBufferTooShort" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="findChildReturnsNullOnNonStructure" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="decodesThreeLevelsDeepStructure" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesNegativeLongInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="booleanTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesStructureWithChildren" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesUnicodeTextString" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
-  <testcase name="encodesAndDecodesByteString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesPositiveLongInteger" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="encodesAndDecodesStructureWithChildren" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="encodesAndDecodesUnicodeTextString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="encodesAndDecodesByteString" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="encodesAndDecodesPositiveLongInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="findChildrenReturnsEmptyWhenNoMatch" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="emptyByteString" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="enumerationTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="longIntegerTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="findChildrenReturnsMultipleMatches" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="longIntegerTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="findChildrenReturnsMultipleMatches" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="encodesAndDecodesMinInteger" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesEmptyStructure" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
+  <testcase name="encodesAndDecodesEmptyStructure" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="dateTimeTotalLengthIs16" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="textStringFiveBytesRoundsToEight" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
   <testcase name="typeByteInEncodedOutput" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
   <testcase name="throwsOnEmptyBuffer" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
-  <testcase name="encodesAndDecodesStructureWithMixedTypes" classname="io.cyphera.kmip.TtlvTest" time="0.001"/>
+  <testcase name="encodesAndDecodesStructureWithMixedTypes" classname="io.cyphera.kmip.TtlvTest" time="0.0"/>
 </testsuite>
