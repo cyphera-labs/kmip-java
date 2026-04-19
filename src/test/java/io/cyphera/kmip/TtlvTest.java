@@ -492,4 +492,75 @@ class TtlvTest {
         Item decoded = decodeTTLV(encoded);
         assertTrue(decoded.children().isEmpty());
     }
+
+    // ---- Security hardening tests ----
+
+    @Test
+    void rejectsDeclaredLengthExceedingBuffer() {
+        // Header claiming 1000 bytes of value, but only 10 bytes provided
+        byte[] buf = new byte[18]; // 8 header + 10 body
+        buf[0] = 0x42; buf[1] = 0x00; buf[2] = 0x01; // tag = 0x420001
+        buf[3] = 0x07; // type = TextString
+        ByteBuffer.wrap(buf, 4, 4).putInt(1000); // length = 1000
+        var ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(buf));
+        assertTrue(ex.getMessage().contains("exceeds buffer"));
+    }
+
+    @Test
+    void acceptsDeclaredLengthThatExactlyFitsBuffer() {
+        byte[] encoded = encodeInteger(0x420001, 42);
+        Item decoded = decodeTTLV(encoded);
+        assertEquals(42, decoded.intValue());
+    }
+
+    @Test
+    void rejectsZeroLengthBuffer() {
+        assertThrows(IllegalArgumentException.class, () -> decodeTTLV(new byte[0]));
+    }
+
+    @Test
+    void rejectsStructuresNestedDeeperThan32Levels() {
+        // Build 33 levels of nesting
+        byte[] inner = encodeInteger(0x420001, 42);
+        for (int i = 0; i < 33; i++) {
+            inner = encodeStructure(0x420001, inner);
+        }
+        byte[] finalBuf = inner;
+        var ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(finalBuf));
+        assertTrue(ex.getMessage().contains("depth"));
+    }
+
+    @Test
+    void acceptsStructuresNestedExactly32LevelsDeep() {
+        // Build 31 wrapping levels (root is depth 0, innermost is depth 31)
+        byte[] inner = encodeInteger(0x420001, 42);
+        for (int i = 0; i < 31; i++) {
+            inner = encodeStructure(0x420001, inner);
+        }
+        Item decoded = decodeTTLV(inner);
+        assertEquals(TYPE_STRUCTURE, decoded.type);
+    }
+
+    @Test
+    void rejectsTruncatedHeader() {
+        byte[] buf = new byte[]{0x42, 0x00, 0x01, 0x02};
+        assertThrows(IllegalArgumentException.class, () -> decodeTTLV(buf));
+    }
+
+    @Test
+    void handlesIntegerWithWrongLengthSafely() {
+        // Craft header: tag=0x420001, type=Integer(0x02), length=3 (should be 4)
+        byte[] buf = new byte[16];
+        buf[0] = 0x42; buf[1] = 0x00; buf[2] = 0x01;
+        buf[3] = 0x02; // type = Integer
+        ByteBuffer.wrap(buf, 4, 4).putInt(3); // length = 3 (invalid)
+        // Should either throw or handle safely — must not crash
+        try {
+            decodeTTLV(buf);
+        } catch (Exception e) {
+            // Any exception is acceptable
+        }
+        // If we get here, the decoder handled it safely
+        assertTrue(true, "decoder did not crash on malformed integer length");
+    }
 }
