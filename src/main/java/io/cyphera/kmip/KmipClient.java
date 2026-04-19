@@ -57,6 +57,9 @@ import java.util.List;
  */
 public class KmipClient implements AutoCloseable {
 
+    /** Maximum KMIP response size (16MB). */
+    private static final int MAX_RESPONSE_SIZE = 16 * 1024 * 1024;
+
     private final String host;
     private final int port;
     private final int timeout;
@@ -399,20 +402,43 @@ public class KmipClient implements AutoCloseable {
     private byte[] send(byte[] request) throws IOException {
         SSLSocket sock = connect();
         OutputStream out = sock.getOutputStream();
-        out.write(request);
-        out.flush();
+        try {
+            out.write(request);
+            out.flush();
+        } catch (IOException e) {
+            socket = null; // Mark connection as stale.
+            throw new IOException("KMIP: failed to write request: " + e.getMessage(), e);
+        }
 
         InputStream in = sock.getInputStream();
 
         // Read the TTLV header (8 bytes) to determine response length
-        byte[] header = readExact(in, 8);
+        byte[] header;
+        try {
+            header = readExact(in, 8);
+        } catch (IOException e) {
+            socket = null; // Mark connection as stale.
+            throw new IOException("KMIP: failed to read response header: " + e.getMessage(), e);
+        }
         int valueLength = ByteBuffer.wrap(header, 4, 4).getInt();
-        int totalLength = 8 + valueLength;
 
+        // Validate response size before allocating.
+        if (valueLength > MAX_RESPONSE_SIZE) {
+            socket = null; // Mark connection as stale.
+            throw new IOException(
+                "KMIP: response too large (" + valueLength + " bytes, max " + MAX_RESPONSE_SIZE + ")");
+        }
+
+        int totalLength = 8 + valueLength;
         byte[] response = new byte[totalLength];
         System.arraycopy(header, 0, response, 0, 8);
-        byte[] body = readExact(in, valueLength);
-        System.arraycopy(body, 0, response, 8, valueLength);
+        try {
+            byte[] body = readExact(in, valueLength);
+            System.arraycopy(body, 0, response, 8, valueLength);
+        } catch (IOException e) {
+            socket = null; // Mark connection as stale.
+            throw new IOException("KMIP: failed to read response body: " + e.getMessage(), e);
+        }
 
         return response;
     }

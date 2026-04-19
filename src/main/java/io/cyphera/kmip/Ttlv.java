@@ -214,6 +214,9 @@ public final class Ttlv {
 
     // --- Decoding ---
 
+    /** Maximum nesting depth for TTLV structures. */
+    private static final int MAX_DECODE_DEPTH = 32;
+
     /**
      * Decode a TTLV buffer into a parsed tree.
      *
@@ -222,6 +225,13 @@ public final class Ttlv {
      * @return decoded Item
      */
     public static Item decodeTTLV(byte[] data, int offset) {
+        return decodeTTLVDepth(data, offset, 0);
+    }
+
+    private static Item decodeTTLVDepth(byte[] data, int offset, int depth) {
+        if (depth > MAX_DECODE_DEPTH) {
+            throw new IllegalArgumentException("TTLV: maximum nesting depth exceeded");
+        }
         if (data.length - offset < 8) {
             throw new IllegalArgumentException("TTLV buffer too short for header");
         }
@@ -235,6 +245,12 @@ public final class Ttlv {
         int totalLength = 8 + padded;
         int valueStart = offset + 8;
 
+        // Bounds check: ensure declared length fits within buffer.
+        if (valueStart + padded > data.length) {
+            throw new IllegalArgumentException(
+                "TTLV: declared length " + length + " exceeds buffer (have " + (data.length - valueStart) + " bytes)");
+        }
+
         Object value;
         switch (type) {
             case TYPE_STRUCTURE: {
@@ -242,7 +258,7 @@ public final class Ttlv {
                 int pos = valueStart;
                 int end = valueStart + length;
                 while (pos < end) {
-                    Item child = decodeTTLV(data, pos);
+                    Item child = decodeTTLVDepth(data, pos, depth + 1);
                     children.add(child);
                     pos += child.totalLength;
                 }
