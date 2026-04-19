@@ -297,26 +297,36 @@ class TagTest {
     }
 
     @Test
-    void algorithmHmacSha256IsEight() {
-        assertEquals(8, Tag.ALG_HMAC_SHA256);
+    void algorithmHmacSha224Is0x08() {
+        assertEquals(0x08, Tag.ALG_HMAC_SHA224);
     }
 
     @Test
-    void algorithmHmacSha384IsNine() {
-        assertEquals(9, Tag.ALG_HMAC_SHA384);
+    void algorithmHmacSha256Is0x09() {
+        assertEquals(0x09, Tag.ALG_HMAC_SHA256);
     }
 
     @Test
-    void algorithmHmacSha512Is0xA() {
-        assertEquals(0x0A, Tag.ALG_HMAC_SHA512);
+    void algorithmHmacSha384Is0x0A() {
+        assertEquals(0x0A, Tag.ALG_HMAC_SHA384);
+    }
+
+    @Test
+    void algorithmHmacSha512Is0x0B() {
+        assertEquals(0x0B, Tag.ALG_HMAC_SHA512);
+    }
+
+    @Test
+    void algorithmHmacMd5Is0x0C() {
+        assertEquals(0x0C, Tag.ALG_HMAC_MD5);
     }
 
     @Test
     void algorithmValuesAreUnique() {
         int[] values = {
             Tag.ALG_DES, Tag.ALG_TRIPLE_DES, Tag.ALG_AES, Tag.ALG_RSA,
-            Tag.ALG_DSA, Tag.ALG_ECDSA, Tag.ALG_HMAC_SHA1, Tag.ALG_HMAC_SHA256,
-            Tag.ALG_HMAC_SHA384, Tag.ALG_HMAC_SHA512
+            Tag.ALG_DSA, Tag.ALG_ECDSA, Tag.ALG_HMAC_SHA1, Tag.ALG_HMAC_SHA224,
+            Tag.ALG_HMAC_SHA256, Tag.ALG_HMAC_SHA384, Tag.ALG_HMAC_SHA512, Tag.ALG_HMAC_MD5
         };
         Set<Integer> set = new HashSet<>();
         for (int v : values) set.add(v);
@@ -422,8 +432,18 @@ class TagTest {
     }
 
     @Test
-    void usageDeriveKeyIs0x100() {
-        assertEquals(0x00000100, Tag.USAGE_DERIVE_KEY);
+    void usageMacGenerateIs0x80() {
+        assertEquals(0x00000080, Tag.USAGE_MAC_GENERATE);
+    }
+
+    @Test
+    void usageMacVerifyIs0x100() {
+        assertEquals(0x00000100, Tag.USAGE_MAC_VERIFY);
+    }
+
+    @Test
+    void usageDeriveKeyIs0x200() {
+        assertEquals(0x00000200, Tag.USAGE_DERIVE_KEY);
     }
 
     @Test
@@ -445,6 +465,7 @@ class TagTest {
         int[] values = {
             Tag.USAGE_SIGN, Tag.USAGE_VERIFY, Tag.USAGE_ENCRYPT, Tag.USAGE_DECRYPT,
             Tag.USAGE_WRAP_KEY, Tag.USAGE_UNWRAP_KEY, Tag.USAGE_EXPORT,
+            Tag.USAGE_MAC_GENERATE, Tag.USAGE_MAC_VERIFY,
             Tag.USAGE_DERIVE_KEY, Tag.USAGE_KEY_AGREEMENT
         };
         for (int i = 0; i < values.length; i++) {

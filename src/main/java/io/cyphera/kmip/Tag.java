@@ -177,9 +177,11 @@ public final class Tag {
     public static final int ALG_DSA         = 0x00000005;
     public static final int ALG_ECDSA       = 0x00000006;
     public static final int ALG_HMAC_SHA1   = 0x00000007;
-    public static final int ALG_HMAC_SHA256 = 0x00000008;
-    public static final int ALG_HMAC_SHA384 = 0x00000009;
-    public static final int ALG_HMAC_SHA512 = 0x0000000A;
+    public static final int ALG_HMAC_SHA224 = 0x00000008;
+    public static final int ALG_HMAC_SHA256 = 0x00000009;
+    public static final int ALG_HMAC_SHA384 = 0x0000000A;
+    public static final int ALG_HMAC_SHA512 = 0x0000000B;
+    public static final int ALG_HMAC_MD5    = 0x0000000C;
 
     // --- Name Types ---
 
@@ -195,6 +197,8 @@ public final class Tag {
     public static final int USAGE_WRAP_KEY      = 0x00000010;
     public static final int USAGE_UNWRAP_KEY    = 0x00000020;
     public static final int USAGE_EXPORT        = 0x00000040;
-    public static final int USAGE_DERIVE_KEY    = 0x00000100;
+    public static final int USAGE_MAC_GENERATE  = 0x00000080;
+    public static final int USAGE_MAC_VERIFY    = 0x00000100;
+    public static final int USAGE_DERIVE_KEY    = 0x00000200;
     public static final int USAGE_KEY_AGREEMENT = 0x00000800;
 }
