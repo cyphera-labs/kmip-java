@@ -547,7 +547,7 @@ class TagTest {
 
     @Test
     void allTagFieldsAreIn0x42Range() throws Exception {
-        List<String> tagFieldNames = List.of(
+        List<String> tagFieldNames = java.util.Arrays.asList(
             "REQUEST_MESSAGE", "RESPONSE_MESSAGE", "REQUEST_HEADER", "RESPONSE_HEADER",
             "PROTOCOL_VERSION", "PROTOCOL_VERSION_MAJOR", "PROTOCOL_VERSION_MINOR",
             "BATCH_COUNT", "BATCH_ITEM", "OPERATION", "REQUEST_PAYLOAD",

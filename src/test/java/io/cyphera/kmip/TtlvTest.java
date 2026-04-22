@@ -503,7 +503,7 @@ class TtlvTest {
         buf[3] = 0x07; // type = TextString
         ByteBuffer.wrap(buf, 4, 4).putInt(1000); // length = 1000
         var ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(buf));
-        assertTrue(ex.getMessage().contains("exceeds buffer"));
+        assertTrue(ex.getMessage().contains("exceeds"));
     }
 
     @Test

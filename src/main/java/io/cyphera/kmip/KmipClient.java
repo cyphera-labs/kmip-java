@@ -17,6 +17,7 @@ package io.cyphera.kmip;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
@@ -25,7 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -33,6 +34,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
@@ -49,8 +51,10 @@ import java.util.List;
  *     .caCert("/path/to/ca.pem")
  *     .build();
  *
- * byte[] key = client.fetchKey("my-key-name");
- * // key is raw key bytes
+ * try (KeyMaterial key = client.fetchKey("my-key-name")) {
+ *     byte[] raw = key.getBytes();
+ *     // use key bytes
+ * }
  *
  * client.close();
  * </pre>
@@ -64,13 +68,16 @@ public class KmipClient implements AutoCloseable {
     private final int port;
     private final int timeout;
     private final SSLContext sslContext;
-    private SSLSocket socket;
+    private final Credential credential;
+    // L2: volatile for visibility across threads
+    private volatile SSLSocket socket;
 
-    private KmipClient(String host, int port, int timeout, SSLContext sslContext) {
+    private KmipClient(String host, int port, int timeout, SSLContext sslContext, Credential credential) {
         this.host = host;
         this.port = port;
         this.timeout = timeout;
         this.sslContext = sslContext;
+        this.credential = credential;
     }
 
     /**
@@ -365,28 +372,30 @@ public class KmipClient implements AutoCloseable {
 
     /**
      * Convenience: locate by name + get material in one call.
+     * Returns a KeyMaterial that must be closed to zero the key bytes.
      *
      * @param name key name
-     * @return raw key bytes
+     * @return key material (caller must close)
      */
-    public byte[] fetchKey(String name) throws IOException {
+    public KeyMaterial fetchKey(String name) throws IOException {
         List<String> ids = locate(name);
         if (ids.isEmpty()) {
-            throw new KmipException("KMIP: no key found with name \"" + name + "\"");
+            // H7: Generic error message — no key name in exception
+            throw new KmipException("KMIP: no key found with the specified name");
         }
         Operations.GetResult result = get(ids.get(0));
         if (result.keyMaterial == null) {
-            throw new KmipException(
-                "KMIP: key \"" + name + "\" (" + ids.get(0) + ") has no extractable material");
+            // H7: Generic error message — no key name or ID in exception
+            throw new KmipException("KMIP: located key has no extractable material");
         }
-        return result.keyMaterial;
+        return new KeyMaterial(result.keyMaterial);
     }
 
     /**
      * Close the TLS connection.
      */
     @Override
-    public void close() {
+    public synchronized void close() {
         if (socket != null) {
             try {
                 socket.close();
@@ -399,7 +408,8 @@ public class KmipClient implements AutoCloseable {
 
     // --- Private methods ---
 
-    private byte[] send(byte[] request) throws IOException {
+    // M8: Synchronized to prevent concurrent access to the socket field
+    private synchronized byte[] send(byte[] request) throws IOException {
         SSLSocket sock = connect();
         OutputStream out = sock.getOutputStream();
         try {
@@ -407,7 +417,7 @@ public class KmipClient implements AutoCloseable {
             out.flush();
         } catch (IOException e) {
             socket = null; // Mark connection as stale.
-            throw new IOException("KMIP: failed to write request: " + e.getMessage(), e);
+            throw new IOException("KMIP: failed to write request", e);
         }
 
         InputStream in = sock.getInputStream();
@@ -418,15 +428,14 @@ public class KmipClient implements AutoCloseable {
             header = readExact(in, 8);
         } catch (IOException e) {
             socket = null; // Mark connection as stale.
-            throw new IOException("KMIP: failed to read response header: " + e.getMessage(), e);
+            throw new IOException("KMIP: failed to read response header", e);
         }
         int valueLength = ByteBuffer.wrap(header, 4, 4).getInt();
 
         // Validate response size before allocating.
-        if (valueLength > MAX_RESPONSE_SIZE) {
+        if (valueLength < 0 || valueLength > MAX_RESPONSE_SIZE) {
             socket = null; // Mark connection as stale.
-            throw new IOException(
-                "KMIP: response too large (" + valueLength + " bytes, max " + MAX_RESPONSE_SIZE + ")");
+            throw new IOException("KMIP: invalid response size");
         }
 
         int totalLength = 8 + valueLength;
@@ -437,16 +446,22 @@ public class KmipClient implements AutoCloseable {
             System.arraycopy(body, 0, response, 8, valueLength);
         } catch (IOException e) {
             socket = null; // Mark connection as stale.
-            throw new IOException("KMIP: failed to read response body: " + e.getMessage(), e);
+            throw new IOException("KMIP: failed to read response body", e);
         }
 
         return response;
     }
 
+    // M5: Track wall-clock time in readExact to prevent partial-response hangs
     private byte[] readExact(InputStream in, int length) throws IOException {
         byte[] buf = new byte[length];
         int offset = 0;
+        long deadline = System.currentTimeMillis() + timeout;
         while (offset < length) {
+            long remaining = deadline - System.currentTimeMillis();
+            if (remaining <= 0) {
+                throw new IOException("KMIP: read timed out waiting for complete response");
+            }
             int n = in.read(buf, offset, length - offset);
             if (n < 0) {
                 throw new IOException("KMIP: connection closed before full response received");
@@ -456,14 +471,24 @@ public class KmipClient implements AutoCloseable {
         return buf;
     }
 
-    private SSLSocket connect() throws IOException {
+    // M8: Synchronized to prevent concurrent access to the socket field
+    private synchronized SSLSocket connect() throws IOException {
         if (socket != null && !socket.isClosed()) {
             return socket;
         }
         try {
-            socket = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
-            socket.setSoTimeout(timeout);
-            socket.startHandshake();
+            SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
+            sock.setSoTimeout(timeout);
+
+            // H1: Enable hostname verification
+            SSLParameters sslParams = sock.getSSLParameters();
+            sslParams.setEndpointIdentificationAlgorithm("HTTPS");
+            // M1: Pin TLS protocol versions
+            sslParams.setProtocols(new String[]{"TLSv1.2", "TLSv1.3"});
+            sock.setSSLParameters(sslParams);
+
+            sock.startHandshake();
+            socket = sock;
             return socket;
         } catch (IOException e) {
             throw new IOException("KMIP connection failed: " + e.getMessage(), e);
@@ -488,6 +513,13 @@ public class KmipClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the credential configured on this client, or null if none set.
+     */
+    Credential getCredential() {
+        return credential;
+    }
+
     // --- Builder ---
 
     /**
@@ -500,6 +532,7 @@ public class KmipClient implements AutoCloseable {
         private String clientKeyPath;
         private String caCertPath;
         private int timeout = 10000;
+        private Credential credential;
 
         public Builder host(String host) { this.host = host; return this; }
         public Builder port(int port) { this.port = port; return this; }
@@ -507,15 +540,27 @@ public class KmipClient implements AutoCloseable {
         public Builder clientKey(String path) { this.clientKeyPath = path; return this; }
         public Builder caCert(String path) { this.caCertPath = path; return this; }
         public Builder timeout(int timeoutMs) { this.timeout = timeoutMs; return this; }
+        public Builder credentials(Credential credential) { this.credential = credential; return this; }
 
         public KmipClient build() {
-            if (host == null) throw new IllegalArgumentException("host is required");
-            if (clientCertPath == null) throw new IllegalArgumentException("clientCert is required");
-            if (clientKeyPath == null) throw new IllegalArgumentException("clientKey is required");
+            // H8: Check isBlank() for required fields
+            if (host == null || host.trim().isEmpty()) {
+                throw new IllegalArgumentException("host is required");
+            }
+            if (clientCertPath == null || clientCertPath.trim().isEmpty()) {
+                throw new IllegalArgumentException("clientCert is required");
+            }
+            if (clientKeyPath == null || clientKeyPath.trim().isEmpty()) {
+                throw new IllegalArgumentException("clientKey is required");
+            }
+            // H2: Make caPath mandatory — do not fall through to JVM default trust store
+            if (caCertPath == null || caCertPath.trim().isEmpty()) {
+                throw new IllegalArgumentException("caCert is required");
+            }
 
             try {
                 SSLContext ctx = buildSSLContext(clientCertPath, clientKeyPath, caCertPath);
-                return new KmipClient(host, port, timeout, ctx);
+                return new KmipClient(host, port, timeout, ctx, credential);
             } catch (Exception e) {
                 throw new KmipException("Failed to build SSL context: " + e.getMessage(), e);
             }
@@ -526,13 +571,18 @@ public class KmipClient implements AutoCloseable {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
             // Load client certificate
-            byte[] certBytes = Files.readAllBytes(Path.of(certPath));
+            byte[] certBytes = Files.readAllBytes(Paths.get(certPath));
             Collection<? extends Certificate> certs = cf.generateCertificates(
                 new ByteArrayInputStream(certBytes));
 
-            // Load client private key (PKCS8 PEM)
-            String keyPem = Files.readString(Path.of(keyPath));
-            PrivateKey privateKey = loadPrivateKey(keyPem);
+            // H6: Load client private key as bytes, zero after use (avoid immutable String)
+            byte[] keyBytes = Files.readAllBytes(Paths.get(keyPath));
+            PrivateKey privateKey;
+            try {
+                privateKey = loadPrivateKey(keyBytes);
+            } finally {
+                Arrays.fill(keyBytes, (byte) 0);
+            }
 
             // Build key store
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
@@ -546,35 +596,33 @@ public class KmipClient implements AutoCloseable {
                 KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(keyStore, new char[0]);
 
-            // Build trust store
-            TrustManagerFactory tmf = null;
-            if (caPath != null) {
-                byte[] caBytes = Files.readAllBytes(Path.of(caPath));
-                Collection<? extends Certificate> caCerts = cf.generateCertificates(
-                    new ByteArrayInputStream(caBytes));
+            // Build trust store — caPath is guaranteed non-null by build()
+            byte[] caBytes = Files.readAllBytes(Paths.get(caPath));
+            Collection<? extends Certificate> caCerts = cf.generateCertificates(
+                new ByteArrayInputStream(caBytes));
 
-                KeyStore trustStore = KeyStore.getInstance("PKCS12");
-                trustStore.load(null, null);
-                int i = 0;
-                for (Certificate ca : caCerts) {
-                    trustStore.setCertificateEntry("ca-" + i++, ca);
-                }
-
-                tmf = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init(trustStore);
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(null, null);
+            int i = 0;
+            for (Certificate ca : caCerts) {
+                trustStore.setCertificateEntry("ca-" + i++, ca);
             }
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
 
             SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init(
                 kmf.getKeyManagers(),
-                tmf != null ? tmf.getTrustManagers() : null,
+                tmf.getTrustManagers(),
                 null);
             return ctx;
         }
 
-        private static PrivateKey loadPrivateKey(String pem) throws Exception {
+        private static PrivateKey loadPrivateKey(byte[] pemBytes) throws Exception {
             // Strip PEM headers/footers and decode
+            String pem = new String(pemBytes, java.nio.charset.StandardCharsets.US_ASCII);
             String base64 = pem
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
@@ -584,18 +632,23 @@ public class KmipClient implements AutoCloseable {
                 .replace("-----END EC PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
 
+            // M9: Zero decoded key bytes after use
             byte[] der = Base64.getDecoder().decode(base64);
-            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
-
-            // Try RSA first, then EC
             try {
-                return KeyFactory.getInstance("RSA").generatePrivate(spec);
-            } catch (Exception e) {
+                PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
+
+                // Try RSA first, then EC
                 try {
-                    return KeyFactory.getInstance("EC").generatePrivate(spec);
-                } catch (Exception e2) {
-                    return KeyFactory.getInstance("DSA").generatePrivate(spec);
+                    return KeyFactory.getInstance("RSA").generatePrivate(spec);
+                } catch (Exception e) {
+                    try {
+                        return KeyFactory.getInstance("EC").generatePrivate(spec);
+                    } catch (Exception e2) {
+                        return KeyFactory.getInstance("DSA").generatePrivate(spec);
+                    }
                 }
+            } finally {
+                Arrays.fill(der, (byte) 0);
             }
         }
     }

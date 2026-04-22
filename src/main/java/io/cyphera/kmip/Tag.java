@@ -28,6 +28,17 @@ public final class Tag {
 
     // --- Tags ---
 
+    // Authentication
+    public static final int AUTHENTICATION             = 0x42000C;
+    public static final int CREDENTIAL                 = 0x420023;
+    public static final int CREDENTIAL_TYPE            = 0x420024;
+    public static final int CREDENTIAL_VALUE           = 0x420025;
+    public static final int USERNAME                   = 0x420099;
+    public static final int PASSWORD                   = 0x4200A1;
+
+    // Credential type enum value
+    public static final int CREDENTIAL_TYPE_USERNAME_PASSWORD = 0x00000001;
+
     // Message structure
     public static final int REQUEST_MESSAGE        = 0x420078;
     public static final int RESPONSE_MESSAGE       = 0x42007B;

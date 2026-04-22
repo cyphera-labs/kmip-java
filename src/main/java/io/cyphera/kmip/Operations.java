@@ -193,11 +193,38 @@ public final class Operations {
 
     /** Build the request header (included in every request). */
     static byte[] buildRequestHeader(int batchCount) {
+        return buildRequestHeader(batchCount, null);
+    }
+
+    /** Build the request header with optional credential authentication. */
+    static byte[] buildRequestHeader(int batchCount, Credential credential) {
+        if (credential == null) {
+            return encodeStructure(Tag.REQUEST_HEADER,
+                encodeStructure(Tag.PROTOCOL_VERSION,
+                    encodeInteger(Tag.PROTOCOL_VERSION_MAJOR, PROTOCOL_MAJOR),
+                    encodeInteger(Tag.PROTOCOL_VERSION_MINOR, PROTOCOL_MINOR)
+                ),
+                encodeInteger(Tag.BATCH_COUNT, batchCount)
+            );
+        }
+        // KMIP Authentication structure: 0x42000C -> Credential(0x420023)
+        //   -> CredentialType(0x420024) + CredentialValue(0x420025)
+        //     -> Username(0x420099) + Password(0x4200A1)
+        byte[] authStructure = encodeStructure(Tag.AUTHENTICATION,
+            encodeStructure(Tag.CREDENTIAL,
+                encodeEnum(Tag.CREDENTIAL_TYPE, Tag.CREDENTIAL_TYPE_USERNAME_PASSWORD),
+                encodeStructure(Tag.CREDENTIAL_VALUE,
+                    encodeTextString(Tag.USERNAME, credential.getUsername()),
+                    encodeTextString(Tag.PASSWORD, credential.getPassword())
+                )
+            )
+        );
         return encodeStructure(Tag.REQUEST_HEADER,
             encodeStructure(Tag.PROTOCOL_VERSION,
                 encodeInteger(Tag.PROTOCOL_VERSION_MAJOR, PROTOCOL_MAJOR),
                 encodeInteger(Tag.PROTOCOL_VERSION_MINOR, PROTOCOL_MINOR)
             ),
+            authStructure,
             encodeInteger(Tag.BATCH_COUNT, batchCount)
         );
     }
@@ -658,7 +685,11 @@ public final class Operations {
         Ttlv.Item payloadItem = findChild(batchItem, Tag.RESPONSE_PAYLOAD);
 
         int operation = operationItem != null ? operationItem.intValue() : 0;
-        int resultStatus = statusItem != null ? statusItem.intValue() : 0;
+        // M7: Missing ResultStatus must not default to 0 (Success) — throw instead
+        if (statusItem == null) {
+            throw new KmipException("KMIP: response missing ResultStatus");
+        }
+        int resultStatus = statusItem.intValue();
         int resultReason = reasonItem != null ? reasonItem.intValue() : 0;
         String resultMessage = messageItem != null ? messageItem.stringValue() : null;
 
@@ -677,6 +708,10 @@ public final class Operations {
 
     /** Parse a Locate response payload. */
     public static LocateResult parseLocatePayload(Ttlv.Item payload) {
+        // M6: Null payload check
+        if (payload == null) {
+            return new LocateResult(new ArrayList<>());
+        }
         List<Ttlv.Item> ids = findChildren(payload, Tag.UNIQUE_IDENTIFIER);
         List<String> result = new ArrayList<>();
         for (Ttlv.Item id : ids) {
@@ -687,6 +722,10 @@ public final class Operations {
 
     /** Parse a Get response payload. */
     public static GetResult parseGetPayload(Ttlv.Item payload) {
+        // M6: Null payload check
+        if (payload == null) {
+            return new GetResult(0, null, null);
+        }
         Ttlv.Item uid = findChild(payload, Tag.UNIQUE_IDENTIFIER);
         Ttlv.Item objType = findChild(payload, Tag.OBJECT_TYPE);
 
@@ -715,6 +754,10 @@ public final class Operations {
 
     /** Parse a Create response payload. */
     public static CreateResult parseCreatePayload(Ttlv.Item payload) {
+        // M6: Null payload check
+        if (payload == null) {
+            return new CreateResult(0, null);
+        }
         Ttlv.Item uid = findChild(payload, Tag.UNIQUE_IDENTIFIER);
         Ttlv.Item objType = findChild(payload, Tag.OBJECT_TYPE);
         return new CreateResult(

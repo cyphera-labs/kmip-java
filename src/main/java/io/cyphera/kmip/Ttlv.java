@@ -16,8 +16,12 @@
 package io.cyphera.kmip;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,6 +50,9 @@ public final class Ttlv {
     public static final int TYPE_DATE_TIME    = 0x09;
     public static final int TYPE_INTERVAL     = 0x0A;
 
+    /** Maximum size for a single TTLV item value (1 MB). */
+    static final int MAX_ITEM_SIZE = 1024 * 1024;
+
     private Ttlv() { }
 
     /**
@@ -67,10 +74,11 @@ public final class Ttlv {
         }
 
         /** Get children (only valid for Structure type). */
+        // Suppressed because the internal List<Item> is stored as Object for polymorphism
         @SuppressWarnings("unchecked")
         public List<Item> children() {
             if (type != TYPE_STRUCTURE) {
-                return List.of();
+                return Collections.emptyList();
             }
             return (List<Item>) value;
         }
@@ -241,14 +249,30 @@ public final class Ttlv {
                 | (data[offset + 2] & 0xFF);
         int type = data[offset + 3] & 0xFF;
         int length = ByteBuffer.wrap(data, offset + 4, 4).getInt();
-        int padded = ((length + 7) / 8) * 8;
+
+        // H3: Reject negative TTLV length
+        if (length < 0) {
+            throw new IllegalArgumentException("TTLV: negative length value");
+        }
+
+        // M2: Per-item size cap (1 MB) — structures are exempt as they contain children
+        if (type != TYPE_STRUCTURE && length > MAX_ITEM_SIZE) {
+            throw new IllegalArgumentException("TTLV: item size exceeds maximum allowed");
+        }
+
+        // C1: Use long arithmetic to prevent integer overflow at 0x7FFFFFF9+
+        long paddedLong = ((((long) length) + 7L) / 8L) * 8L;
+        if (paddedLong > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("TTLV: padded length overflow");
+        }
+        int padded = (int) paddedLong;
         int totalLength = 8 + padded;
         int valueStart = offset + 8;
 
-        // Bounds check: ensure declared length fits within buffer.
+        // M4: Generic bounds-check error message (no buffer geometry leak)
         if (valueStart + padded > data.length) {
             throw new IllegalArgumentException(
-                "TTLV: declared length " + length + " exceeds buffer (have " + (data.length - valueStart) + " bytes)");
+                "TTLV: declared length exceeds available data");
         }
 
         Object value;
@@ -258,7 +282,16 @@ public final class Ttlv {
                 int pos = valueStart;
                 int end = valueStart + length;
                 while (pos < end) {
+                    // H4: Guard against child overrunning the structure boundary
+                    if (pos + 8 > end) {
+                        throw new IllegalArgumentException(
+                            "TTLV: truncated child header in structure");
+                    }
                     Item child = decodeTTLVDepth(data, pos, depth + 1);
+                    if (pos + child.totalLength > end) {
+                        throw new IllegalArgumentException(
+                            "TTLV: child item exceeds structure boundary");
+                    }
                     children.add(child);
                     pos += child.totalLength;
                 }
@@ -277,9 +310,21 @@ public final class Ttlv {
             case TYPE_BOOLEAN:
                 value = ByteBuffer.wrap(data, valueStart, 8).getLong() != 0;
                 break;
-            case TYPE_TEXT_STRING:
-                value = new String(data, valueStart, length, StandardCharsets.UTF_8);
+            case TYPE_TEXT_STRING: {
+                // M3: Validate UTF-8 strictly using CharsetDecoder with REPORT action
+                CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT);
+                ByteBuffer bb = ByteBuffer.wrap(data, valueStart, length);
+                CharBuffer cb;
+                try {
+                    cb = decoder.decode(bb);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("TTLV: invalid UTF-8 in text string", e);
+                }
+                value = cb.toString();
                 break;
+            }
             case TYPE_BYTE_STRING: {
                 byte[] bytes = new byte[length];
                 System.arraycopy(data, valueStart, bytes, 0, length);
