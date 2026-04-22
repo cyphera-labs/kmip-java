@@ -210,7 +210,9 @@ class TtlvTest {
 
     @Test
     void encodesAndDecodesLongTextString() {
-        String longStr = "A".repeat(300);
+        StringBuilder sb = new StringBuilder(300);
+        for (int i = 0; i < 300; i++) sb.append('A');
+        String longStr = sb.toString();
         byte[] encoded = encodeTextString(0x420055, longStr);
         Item decoded = decodeTTLV(encoded);
         assertEquals(longStr, decoded.stringValue());
@@ -502,7 +504,7 @@ class TtlvTest {
         buf[0] = 0x42; buf[1] = 0x00; buf[2] = 0x01; // tag = 0x420001
         buf[3] = 0x07; // type = TextString
         ByteBuffer.wrap(buf, 4, 4).putInt(1000); // length = 1000
-        var ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(buf));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(buf));
         assertTrue(ex.getMessage().contains("exceeds"));
     }
 
@@ -526,7 +528,7 @@ class TtlvTest {
             inner = encodeStructure(0x420001, inner);
         }
         byte[] finalBuf = inner;
-        var ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(finalBuf));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeTTLV(finalBuf));
         assertTrue(ex.getMessage().contains("depth"));
     }
 
